@@ -1,18 +1,29 @@
 package main
 
 import (
+	"math/rand"
 	"os"
+	"strconv"
+	"time"
 
 	eurekaservices "dc_assignment.com/m/v2/eureka_services"
 	"dc_assignment.com/m/v2/models"
+	"dc_assignment.com/m/v2/routes"
 )
 
 func main() {
+	currentTime := strconv.FormatInt(time.Now().Unix(), 10)
+	randomNumber := strconv.FormatInt(rand.Int63(), 10)
+	id := currentTime + randomNumber
 	hostName := os.Getenv("POD_NAME")
 	app := os.Getenv("APP_NAME")
 	ipAddress := os.Getenv("POD_IP")
-	status := "UP"
 	port := os.Getenv("POD_PORT")
+	// hostName := "PRIMENUMBER"
+	// app := "PRIMENUMBERAPP"
+	// ipAddress := "localhost"
+	// port := "8080"
+	status := "UP"
 	enabledPort := "true"
 	healthCheckUrl := "http://" + ipAddress + ":" + port + "/healthcheck"
 	statusCheckUrl := "http://" + ipAddress + ":" + port + "/status"
@@ -20,10 +31,11 @@ func main() {
 	class := "com.netflix.appinfo.InstanceInfo$DefaultDataCenterInfo"
 	name := "MyOwn"
 	ins := &models.InstanceModel{
-		HostName:  &hostName,
-		App:       &app,
-		IpAddress: &ipAddress,
-		Status:    &status,
+		InstanceId: &id,
+		HostName:   &hostName,
+		App:        &app,
+		IpAddress:  &ipAddress,
+		Status:     &status,
 		Port: &models.PortModel{
 			PortNumber: &port,
 			Enabled:    &enabledPort,
@@ -37,4 +49,7 @@ func main() {
 		},
 	}
 	eurekaservices.RegisterInstance(app, ins)
+	r := routes.SetupRouter()
+	r.Run()
+
 }

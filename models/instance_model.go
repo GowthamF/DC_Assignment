@@ -1,6 +1,7 @@
 package models
 
 type InstanceModel struct {
+	InstanceId     *string              `json:"instanceId"`
 	HostName       *string              `json:"hostName"`
 	App            *string              `json:"app"`
 	IpAddress      *string              `json:"ipAddr"`
