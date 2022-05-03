@@ -1,28 +1,35 @@
 package main
 
 import (
+	"flag"
+	"fmt"
 	"math/rand"
-	"os"
-	"strconv"
 	"time"
 
-	eurekaservices "dc_assignment.com/m/v2/eureka_services"
+	"dc_assignment.com/m/v2/eurekaservices"
 	"dc_assignment.com/m/v2/models"
 	"dc_assignment.com/m/v2/routes"
 )
 
+var (
+	portNumber = flag.String("portNumber", "8080", "Port Number to serve")
+)
+
 func main() {
-	currentTime := strconv.FormatInt(time.Now().Unix(), 10)
-	randomNumber := strconv.FormatInt(rand.Int63(), 10)
+	flag.Parse()
+	rand.Seed(time.Now().UnixNano())
+	currentTime := fmt.Sprint(time.Now().UnixMilli())
+	randomNumber := fmt.Sprint(rand.Int63())
+
 	id := currentTime + randomNumber
-	hostName := os.Getenv("POD_NAME")
-	app := os.Getenv("APP_NAME")
-	ipAddress := os.Getenv("POD_IP")
-	port := os.Getenv("POD_PORT")
-	// hostName := "PRIMENUMBER"
-	// app := "PRIMENUMBERAPP"
-	// ipAddress := "localhost"
-	// port := "8080"
+	// hostName := os.Getenv("POD_NAME")
+	// app := os.Getenv("APP_NAME")
+	// ipAddress := os.Getenv("POD_IP")
+	// port := os.Getenv("POD_PORT")
+	hostName := "PRIMENUMBER"
+	app := "PRIMENUMBERAPP"
+	ipAddress := "localhost"
+	port := *portNumber
 	status := "UP"
 	enabledPort := "true"
 	healthCheckUrl := "http://" + ipAddress + ":" + port + "/healthcheck"
@@ -49,7 +56,9 @@ func main() {
 		},
 	}
 	eurekaservices.RegisterInstance(app, ins)
+	go eurekaservices.UpdateHeartBeat(app, id)
+
 	r := routes.SetupRouter()
-	r.Run()
+	r.Run(":" + *portNumber)
 
 }
