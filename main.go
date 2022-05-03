@@ -2,26 +2,30 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"math/rand"
+	"strconv"
 	"time"
 
+	"dc_assignment.com/m/v2/controllers"
 	"dc_assignment.com/m/v2/eurekaservices"
 	"dc_assignment.com/m/v2/models"
 	"dc_assignment.com/m/v2/routes"
 )
 
 var (
-	portNumber = flag.String("portNumber", "8080", "Port Number to serve")
+	portNumber      = flag.Int("portNumber", 8080, "Port Number to serve")
+	isStartElection = flag.Bool("election", false, "To start the election")
+	insId           = flag.Int("id", 0, "ID")
 )
 
 func main() {
 	flag.Parse()
 	rand.Seed(time.Now().UnixNano())
-	currentTime := fmt.Sprint(time.Now().UnixMilli())
-	randomNumber := fmt.Sprint(rand.Int63())
+	// currentTime := fmt.Sprint(time.Now().UnixMilli())
+	// randomNumber := fmt.Sprint(rand.Int31n(10000))
 
-	id := currentTime + randomNumber
+	id := strconv.Itoa(*insId)
+
 	// hostName := os.Getenv("POD_NAME")
 	// app := os.Getenv("APP_NAME")
 	// ipAddress := os.Getenv("POD_IP")
@@ -32,9 +36,9 @@ func main() {
 	port := *portNumber
 	status := "UP"
 	enabledPort := "true"
-	healthCheckUrl := "http://" + ipAddress + ":" + port + "/healthcheck"
-	statusCheckUrl := "http://" + ipAddress + ":" + port + "/status"
-	homePageUrl := "http://" + ipAddress + ":" + port
+	healthCheckUrl := "http://" + ipAddress + ":" + strconv.Itoa(port) + "/healthcheck"
+	statusCheckUrl := "http://" + ipAddress + ":" + strconv.Itoa(port) + "/status"
+	homePageUrl := "http://" + ipAddress + ":" + strconv.Itoa(port)
 	class := "com.netflix.appinfo.InstanceInfo$DefaultDataCenterInfo"
 	name := "MyOwn"
 	ins := &models.InstanceModel{
@@ -55,10 +59,16 @@ func main() {
 			Name:  &name,
 		},
 	}
+
 	eurekaservices.RegisterInstance(app, ins)
+
+	if *isStartElection {
+		controllers.GetHigherInstanceIds(id, app)
+	}
+
 	go eurekaservices.UpdateHeartBeat(app, id)
 
-	r := routes.SetupRouter()
-	r.Run(":" + *portNumber)
+	r := routes.SetupRouter(id)
+	r.Run(":" + strconv.Itoa(port))
 
 }

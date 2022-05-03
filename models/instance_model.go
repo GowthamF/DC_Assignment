@@ -14,11 +14,20 @@ type InstanceModel struct {
 }
 
 type PortModel struct {
-	PortNumber *string `json:"$"`
+	PortNumber *int    `json:"$"`
 	Enabled    *string `json:"@enabled"`
 }
 
 type DataCenterInfoModel struct {
 	Class *string `json:"@class"`
 	Name  *string `json:"name"`
+}
+
+type InstancesModel struct {
+	Application *ApplicationModel `json:"application"`
+}
+
+type ApplicationModel struct {
+	Name     *string           `json:"name"`
+	Instance *[]*InstanceModel `json:"instance"`
 }
