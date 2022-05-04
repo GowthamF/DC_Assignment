@@ -9,6 +9,7 @@ import (
 	"dc_assignment.com/m/v2/controllers"
 	"dc_assignment.com/m/v2/eurekaservices"
 	"dc_assignment.com/m/v2/models"
+	"dc_assignment.com/m/v2/queue"
 	"dc_assignment.com/m/v2/routes"
 )
 
@@ -61,7 +62,7 @@ func main() {
 	}
 
 	eurekaservices.RegisterInstance(app, ins)
-
+	go queue.ReceiveMessage("masterElection")
 	if *isStartElection {
 		controllers.GetHigherInstanceIds(id, app)
 	}

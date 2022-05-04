@@ -26,7 +26,7 @@ func SetupRouter(instanceId string) *gin.Engine {
 		ctx.JSON(http.StatusOK, "Running")
 	})
 
-	routeEngine.POST("/startElection", controllers.StartElection)
+	routeEngine.GET("/startElection", controllers.StartElection)
 	routeEngine.POST("/stopElection", controllers.StopElection)
 	routeEngine.GET("/requestElection/:requestInstanceId", controllers.RequestElection)
 

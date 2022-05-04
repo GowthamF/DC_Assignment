@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"dc_assignment.com/m/v2/eurekaservices"
+	"dc_assignment.com/m/v2/queue"
 	"github.com/gin-gonic/gin"
 )
 
@@ -24,35 +25,53 @@ func RequestElection(c *gin.Context) {
 	// fmt.Println(instanceId)
 	// fmt.Println(requestInstanceId)
 	if instanceId < requestInstanceId {
-		fmt.Println(requestInstanceId)
 		c.Status(http.StatusOK)
 	} else {
 		c.Status(http.StatusNotAcceptable)
-		GetHigherInstanceIds(c.GetString("instanceId"), "PRIMENUMBERAPP")
 	}
 
 }
 
 func GetHigherInstanceIds(myId string, appName string) {
 	instances := eurekaservices.GetInstances(appName)
+	var urlToNotify string = ""
 	for _, instance := range *instances.Application.Instance {
 		if instance != nil {
 			insId, _ := strconv.ParseInt(*instance.InstanceId, 0, 64)
 			myAppId, _ := strconv.ParseInt(myId, 0, 64)
 
 			if myAppId < insId {
-				SendElectionRequest(instance.HomePageUrl, &myId)
-			} else {
-				log.Println(myAppId, " is the leader")
+				url := SendElectionRequest(instance.HomePageUrl, &myId)
+				fmt.Println(url)
+				if urlToNotify == "" {
+					urlToNotify = url
+				}
 			}
 		}
 	}
+	if urlToNotify != "" {
+		fmt.Println(urlToNotify)
+		SendStartElectionRequest(urlToNotify)
+	} else {
+		log.Println(myId, " I am the Leader")
+		go queue.SendMessage("masterElection", myId+" is the Leader")
+	}
+
 }
 
-func SendElectionRequest(url *string, myAppId *string) {
+func SendStartElectionRequest(url string) {
+	fmt.Println(url)
+	_, err := http.Get(url + "/startElection")
+
+	if err != nil {
+		log.Fatalln(err)
+	}
+}
+
+func SendElectionRequest(url *string, myAppId *string) string {
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", *url+"/requestElection/"+*myAppId, bytes.NewBuffer([]byte{}))
-
+	var remoteUrl = ""
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -64,9 +83,10 @@ func SendElectionRequest(url *string, myAppId *string) {
 
 	if resp.StatusCode == 200 {
 		log.Println("Continue the election")
-		GetHigherInstanceIds(*myAppId, "PRIMENUMBERAPP")
 
 	} else if resp.StatusCode == 406 {
 		log.Println("Do not continue")
+		remoteUrl = *url
 	}
+	return remoteUrl
 }
