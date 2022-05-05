@@ -3,6 +3,7 @@ package eurekaservices
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -15,7 +16,7 @@ import (
 
 func RegisterInstance(appName string, instance *models.InstanceModel) {
 	instanceJson := map[string]*models.InstanceModel{"instance": instance}
-
+	fmt.Println(instanceJson)
 	json_data, err := json.Marshal(instanceJson)
 	client := &http.Client{}
 	if err != nil {
@@ -33,13 +34,14 @@ func RegisterInstance(appName string, instance *models.InstanceModel) {
 	resp, err := client.Do(req)
 
 	if err != nil {
-		log.Fatalln(err)
+		log.Println(err)
 	}
 
 	if resp.StatusCode == 204 {
 		log.Println("Successfully Registered")
 
 	} else {
+		log.Println(resp.StatusCode)
 		log.Println("Error during registering")
 	}
 }
